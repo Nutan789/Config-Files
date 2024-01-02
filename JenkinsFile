@@ -1,0 +1,38 @@
+pipeline {
+    agent any
+    stages {
+        stage("code") {
+            steps {
+                echo "Code"
+                git url:"https://github.com/Nutan789/node-todo-cicd.git", branch:"master"
+            }
+        }
+        stage("Build") {
+            steps {
+                echo "Build"
+                sh "docker build -t nodeapp:latest ."
+            }
+        }
+        stage("Scan") {
+            steps {
+                echo "Scan"
+            }
+        }
+        stage("Push") {
+            steps {
+                echo "Push"
+                withCredentials([usernamePassword(credentialsId:"DockerHub",passwordVariable:"dockerHubpass",usernameVariable:"dockerHubuser")]){
+                    sh "docker login -u ${env.dockerHubuser} -p ${env.dockerHubpass}"
+                    sh "docker tag nodeapp:latest nutan921/nodeapp:latest"
+                    sh "docker push nutan921/nodeapp:latest"
+                }
+            }
+        }
+        stage("Deploy") {
+            steps {
+                echo "Deploy"
+                sh "docker-compose down && docker-compose up -d --build web"
+            }
+        }
+    }
+}
